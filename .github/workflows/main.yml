@@ -3,7 +3,7 @@ name: Create OCI Instance
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
 
 jobs:
   launch-instance:
@@ -23,12 +23,25 @@ jobs:
           pip install -r requirements.txt
 
       - name: Create OCI Config and Private Key files
+        env:
+          RAW_KEY: ${{ secrets.OCI_API_PRIVATE_KEY }}
+          RAW_CONFIG: ${{ secrets.OCI_CONFIG }}
+          RAW_ENV: ${{ secrets.OCI_ENV }}
         run: |
           mkdir -p ~/.oci
-          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
-          echo "${{ secrets.OCI_CONFIG }}" > oci_config
-          echo "${{ secrets.OCI_API_PRIVATE_KEY }}" | base64 -d > ~/.oci/oci_api_private_key.pem
-          echo "${{ secrets.OCI_ENV }}" > oci.env
+          python3 -c "
+          import os, base64
+          key_data = os.environ['RAW_KEY'].strip()
+          try:
+              decoded = base64.b64decode(key_data).decode('utf-8')
+          except Exception:
+              decoded = key_data
+          with open('/home/runner/.oci/oci_api_private_key.pem', 'w') as f:
+              f.write(decoded.strip() + '\n')
+          "
+          echo "$RAW_CONFIG" > ~/.oci/config
+          echo "$RAW_CONFIG" > oci_config
+          echo "$RAW_ENV" > oci.env
           chmod 600 ~/.oci/oci_api_private_key.pem
 
       - name: Run creation script
