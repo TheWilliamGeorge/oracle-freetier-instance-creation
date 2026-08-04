@@ -15,38 +15,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build OCI Config and Environment Files
-        env:
-          RAW_CONFIG: ${{ secrets.OCI_CONFIG }}
-          RAW_KEY: ${{ secrets.OCI_API_PRIVATE_KEY }}
-          RAW_ENV: ${{ secrets.OCI_ENV }}
+      - name: Create OCI Config and Private Key files
         run: |
           mkdir -p ~/.oci
-          python3 -c "
-          import os
-
-          config_str = os.environ.get('RAW_CONFIG', '').strip()
-          raw_key = os.environ.get('RAW_KEY', '').strip()
-
-          # Format key with leading spaces for ini multiline support
-          indented_key = '\n'.join('  ' + line for line in raw_key.splitlines())
-
-          # Construct config with inline key_content
-          final_config = f'{config_str}\nkey_content =\n{indented_key}\n'
-
-          with open('/home/runner/.oci/config', 'w') as f:
-              f.write(final_config)
-          with open('oci_config', 'w') as f:
-              f.write(final_config)
-          "
-          echo "$RAW_ENV" > oci.env
+          echo "${{ secrets.OCI_CONFIG }}" > oci_config
+          echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_API_PRIVATE_KEY }}" > oci_api_private_key.pem
+          echo "${{ secrets.OCI_API_PRIVATE_KEY }}" > ~/.oci/oci_api_private_key.pem
+          echo "${{ secrets.OCI_ENV }}" > oci.env
+          chmod 600 oci_api_private_key.pem ~/.oci/oci_api_private_key.pem
 
       - name: Run creation script
         run: python main.py
