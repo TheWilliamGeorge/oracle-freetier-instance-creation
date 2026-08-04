@@ -25,12 +25,10 @@ jobs:
       - name: Create OCI Config and Private Key files
         run: |
           mkdir -p ~/.oci
-          echo "${{ secrets.OCI_CONFIG }}" > oci_config
           echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
-          echo "${{ secrets.OCI_API_PRIVATE_KEY }}" > oci_api_private_key.pem
-          echo "${{ secrets.OCI_API_PRIVATE_KEY }}" > ~/.oci/oci_api_private_key.pem
+          echo "${{ secrets.OCI_API_PRIVATE_KEY }}" | base64 -d > ~/.oci/oci_api_private_key.pem
           echo "${{ secrets.OCI_ENV }}" > oci.env
-          chmod 600 oci_api_private_key.pem ~/.oci/oci_api_private_key.pem
+          chmod 600 ~/.oci/oci_api_private_key.pem
 
       - name: Run creation script
         run: python main.py
