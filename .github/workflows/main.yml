@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -26,6 +26,7 @@ jobs:
         run: |
           mkdir -p ~/.oci
           echo "${{ secrets.OCI_CONFIG }}" > ~/.oci/config
+          echo "${{ secrets.OCI_CONFIG }}" > oci_config
           echo "${{ secrets.OCI_API_PRIVATE_KEY }}" | base64 -d > ~/.oci/oci_api_private_key.pem
           echo "${{ secrets.OCI_ENV }}" > oci.env
           chmod 600 ~/.oci/oci_api_private_key.pem
