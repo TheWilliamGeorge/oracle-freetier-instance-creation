@@ -3,7 +3,7 @@ name: Create OCI Instance
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/10 * * * *'
 
 jobs:
   launch-instance:
@@ -22,27 +22,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Create OCI Config and Private Key files
+      - name: Build OCI Config and Environment Files
         env:
-          RAW_KEY: ${{ secrets.OCI_API_PRIVATE_KEY }}
           RAW_CONFIG: ${{ secrets.OCI_CONFIG }}
+          RAW_KEY: ${{ secrets.OCI_API_PRIVATE_KEY }}
           RAW_ENV: ${{ secrets.OCI_ENV }}
         run: |
           mkdir -p ~/.oci
           python3 -c "
-          import os, base64
-          key_data = os.environ['RAW_KEY'].strip()
-          try:
-              decoded = base64.b64decode(key_data).decode('utf-8')
-          except Exception:
-              decoded = key_data
-          with open('/home/runner/.oci/oci_api_private_key.pem', 'w') as f:
-              f.write(decoded.strip() + '\n')
+          import os
+
+          config_str = os.environ.get('RAW_CONFIG', '').strip()
+          raw_key = os.environ.get('RAW_KEY', '').strip()
+
+          # Format key with leading spaces for ini multiline support
+          indented_key = '\n'.join('  ' + line for line in raw_key.splitlines())
+
+          # Construct config with inline key_content
+          final_config = f'{config_str}\nkey_content =\n{indented_key}\n'
+
+          with open('/home/runner/.oci/config', 'w') as f:
+              f.write(final_config)
+          with open('oci_config', 'w') as f:
+              f.write(final_config)
           "
-          echo "$RAW_CONFIG" > ~/.oci/config
-          echo "$RAW_CONFIG" > oci_config
           echo "$RAW_ENV" > oci.env
-          chmod 600 ~/.oci/oci_api_private_key.pem
 
       - name: Run creation script
         run: python main.py
