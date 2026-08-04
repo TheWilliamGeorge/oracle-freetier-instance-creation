@@ -1,0 +1,33 @@
+name: Create OCI Instance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+jobs:
+  launch-instance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create OCI Config and Private Key files
+        run: |
+          echo "${{ secrets.OCI_CONFIG }}" > sample_oci_config
+          echo "${{ secrets.OCI_PRIVATE_KEY }}" > oci_api_private_key.pem
+          echo "${{ secrets.OCI_ENV }}" > oci.env
+          chmod 600 oci_api_private_key.pem
+
+      - name: Run creation script
+        run: python main.py
