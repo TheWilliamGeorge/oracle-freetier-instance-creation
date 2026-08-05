@@ -41,24 +41,33 @@ EMAIL = os.getenv("EMAIL", "").strip()
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "").strip()
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK", "").strip()
 
-# Exclude SSH_AUTHORIZED_KEYS_FILE from space validation since raw SSH keys contain spaces
-env_vars_to_check = [
-    OCI_CONFIG, OCT_FREE_AD, WAIT_TIME, OCI_IMAGE_ID, 
-    OCI_COMPUTE_SHAPE, SECOND_MICRO_INSTANCE, OCI_SUBNET_ID, 
-    OS_VERSION, NOTIFY_EMAIL, EMAIL, EMAIL_PASSWORD, DISCORD_WEBHOOK
-]
-env_has_spaces = any(isinstance(confg_var, str) and " " in confg_var for confg_var in env_vars_to_check)
-config_has_spaces = any(' ' in value for section in config.sections() 
-                        for _, value in config.items(section))
-if env_has_spaces:
-    raise ValueError("oci.env has spaces in values which is not acceptable")
-if config_has_spaces:
-    raise ValueError("oci_config has spaces in values which is not acceptable")      
+# Read the configuration from oci_config file
+config = configparser.ConfigParser()
+try:
+    config.read(OCI_CONFIG)
+    OCI_USER_ID = config.get('DEFAULT', 'user')
+    if OCI_COMPUTE_SHAPE not in (ARM_SHAPE, E2_MICRO_SHAPE):
+        raise ValueError(f"{OCI_COMPUTE_SHAPE} is not an acceptable shape")
 
-except configparser.Error as e:
+    # Exclude SSH_AUTHORIZED_KEYS_FILE from space validation since raw SSH keys contain spaces
+    env_vars_to_check = [
+        OCI_CONFIG, OCT_FREE_AD, WAIT_TIME, OCI_IMAGE_ID, 
+        OCI_COMPUTE_SHAPE, SECOND_MICRO_INSTANCE, OCI_SUBNET_ID, 
+        OS_VERSION, NOTIFY_EMAIL, EMAIL, EMAIL_PASSWORD, DISCORD_WEBHOOK
+    ]
+    env_has_spaces = any(isinstance(confg_var, str) and " " in confg_var for confg_var in env_vars_to_check)
+    config_has_spaces = any(' ' in value for section in config.sections() 
+                            for _, value in config.items(section))
+    if env_has_spaces:
+        raise ValueError("oci.env has spaces in values which is not acceptable")
+    if config_has_spaces:
+        raise ValueError("oci_config has spaces in values which is not acceptable")
+
+except Exception as e:
     with open("ERROR_IN_CONFIG.log", "w", encoding='utf-8') as file:
         file.write(str(e))
     print(f"Error reading configuration file: {e}", flush=True)
+    raise
 
 # Set up logging
 logging.basicConfig(
@@ -227,8 +236,12 @@ def generate_ssh_key_pair(public_key_file: Union[str, Path], private_key_file: U
                                       f"{Path(public_key_file).stem}_auto_generated"))
 
 
-def read_or_generate_ssh_public_key(public_key_file: Union[str, Path]):
-    public_key_path = Path(public_key_file)
+def read_or_generate_ssh_public_key(public_key_setting: str):
+    # If a raw SSH public key was passed directly into the variable
+    if public_key_setting.startswith("ssh-rsa") or public_key_setting.startswith("ssh-ed25519"):
+        return public_key_setting
+
+    public_key_path = Path(public_key_setting)
 
     if not public_key_path.is_file():
         logging.info("SSH key doesn't exist... Generating SSH Key Pair")
