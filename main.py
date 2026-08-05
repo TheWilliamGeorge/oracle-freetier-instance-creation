@@ -42,18 +42,18 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "").strip()
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK", "").strip()
 
 # Exclude SSH_AUTHORIZED_KEYS_FILE from space validation since raw SSH keys contain spaces
-    env_vars_to_check = [
-        OCI_CONFIG, OCT_FREE_AD, WAIT_TIME, OCI_IMAGE_ID, 
-        OCI_COMPUTE_SHAPE, SECOND_MICRO_INSTANCE, OCI_SUBNET_ID, 
-        OS_VERSION, NOTIFY_EMAIL, EMAIL, EMAIL_PASSWORD, DISCORD_WEBHOOK
-    ]
-    env_has_spaces = any(isinstance(confg_var, str) and " " in confg_var for confg_var in env_vars_to_check)
-    config_has_spaces = any(' ' in value for section in config.sections() 
-                            for _, value in config.items(section))
-    if env_has_spaces:
-        raise ValueError("oci.env has spaces in values which is not acceptable")
-    if config_has_spaces:
-        raise ValueError("oci_config has spaces in values which is not acceptable")      
+env_vars_to_check = [
+    OCI_CONFIG, OCT_FREE_AD, WAIT_TIME, OCI_IMAGE_ID, 
+    OCI_COMPUTE_SHAPE, SECOND_MICRO_INSTANCE, OCI_SUBNET_ID, 
+    OS_VERSION, NOTIFY_EMAIL, EMAIL, EMAIL_PASSWORD, DISCORD_WEBHOOK
+]
+env_has_spaces = any(isinstance(confg_var, str) and " " in confg_var for confg_var in env_vars_to_check)
+config_has_spaces = any(' ' in value for section in config.sections() 
+                        for _, value in config.items(section))
+if env_has_spaces:
+    raise ValueError("oci.env has spaces in values which is not acceptable")
+if config_has_spaces:
+    raise ValueError("oci_config has spaces in values which is not acceptable")      
 
 except configparser.Error as e:
     with open("ERROR_IN_CONFIG.log", "w", encoding='utf-8') as file:
