@@ -5,9 +5,15 @@ on:
   schedule:
     - cron: '0 * * * *'
 
+# Prevents multiple workflow runs from executing simultaneously
+concurrency:
+  group: oci-instance-hunter
+  cancel-in-progress: false
+
 jobs:
   launch-instance:
     runs-on: ubuntu-latest
+    timeout-minutes: 59 # Automatically stops the run after 59 minutes
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
