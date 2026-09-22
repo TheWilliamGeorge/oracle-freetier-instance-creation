@@ -2,8 +2,8 @@ name: Create OCI Instance
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *'
+  # schedule:
+    # - cron: '0 * * * *'
 
 # Prevents multiple workflow runs from executing simultaneously
 concurrency:
